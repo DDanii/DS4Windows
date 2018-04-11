@@ -5,9 +5,11 @@ using System.Text;
 using System.Drawing;
 using static System.Math;
 using static DS4Windows.Global;
+
 namespace DS4Windows
 {
     public class DS4LightBar
+        
     {
         private readonly static byte[/* Light On duration */, /* Light Off duration */] BatteryIndicatorDurations =
         {
@@ -22,6 +24,8 @@ namespace DS4Windows
             { 224, 56}, // on 80% of the time at 80, etc.
             { 252, 28 } // on 90% of the time at 90
         };
+    
+
         static double[] counters = new double[4] { 0, 0, 0, 0 };
         public static double[] fadetimer = new double[4] { 0, 0, 0, 0 };
         static bool[] fadedirection = new bool[4] { false, false, false, false };
@@ -31,20 +35,39 @@ namespace DS4Windows
         public static byte[] forcedFlash = new byte[4];
         public static void updateLightBar(DS4Device device, int deviceNum, DS4State cState, DS4StateExposed eState, Mouse tp)
         {
-            DS4Color color;
+            DS4Color color = CustomColor[deviceNum];
             if (!defualtLight && !forcelight[deviceNum])
             {
                 if (UseCustomLed[deviceNum])
                 {
                     if (LedAsBatteryIndicator[deviceNum])
                     {
-                            DS4Color fullColor = CustomColor[deviceNum];
-                            DS4Color lowColor = LowColor[deviceNum];
+                        DS4Color fullColor = CustomColor[deviceNum];
+                        DS4Color lowColor = LowColor[deviceNum];
 
-                            color = getTransitionedColor(lowColor, fullColor, device.Battery);
+                        color = getTransitionedColor(lowColor, fullColor, device.Battery);
                     }
                     else
-                        color = CustomColor[deviceNum];
+                    {
+                        
+                        if (!(CustomColor[deviceNum].red == 0 &&
+                        CustomColor[deviceNum].green == 0 &&
+                        CustomColor[deviceNum].blue == 0))
+                            color = CustomColor[deviceNum];
+                        if (FlashType[deviceNum] == 1)
+                        {
+                            if (fadetimer[deviceNum] <= 0)
+                                fadedirection[deviceNum] = true;
+                            else if (fadetimer[deviceNum] >= 100)
+                                fadedirection[deviceNum] = false;
+                            if (fadedirection[deviceNum])
+                                fadetimer[deviceNum] += 1;
+                            else
+                                fadetimer[deviceNum] -= 1;
+                            color = getTransitionedColor(color, new DS4Color(0, 0, 0), fadetimer[deviceNum]);
+                        }
+                    }
+
                 }
                 else
                 {
@@ -81,7 +104,22 @@ namespace DS4Windows
                     }
                     else
                     {
-                        color = MainColor[deviceNum];
+                        if (!(MainColor[deviceNum].red == 0 &&
+                        MainColor[deviceNum].green == 0 &&
+                        MainColor[deviceNum].blue == 0))
+                            color = MainColor[deviceNum];
+                        if (FlashType[deviceNum] == 1)
+                        {
+                            if (fadetimer[deviceNum] <= 0)
+                                fadedirection[deviceNum] = true;
+                            else if (fadetimer[deviceNum] >= 100)
+                                fadedirection[deviceNum] = false;
+                            if (fadedirection[deviceNum])
+                                fadetimer[deviceNum] += 1;
+                            else
+                                fadetimer[deviceNum] -= 1;
+                            color = getTransitionedColor(color, new DS4Color(0, 0, 0), fadetimer[deviceNum]);
+                        }
                     }
 
                 }
@@ -99,9 +137,9 @@ namespace DS4Windows
                         else if (fadetimer[deviceNum] >= 100)
                             fadedirection[deviceNum] = false;
                         if (fadedirection[deviceNum])
-                            fadetimer[deviceNum] += 1;
+                            fadetimer[deviceNum] += 0.1;
                         else
-                            fadetimer[deviceNum] -= 1;
+                            fadetimer[deviceNum] -= 0.1;
                         color = getTransitionedColor(color, new DS4Color(0, 0, 0), fadetimer[deviceNum]);
                     }
                 }
